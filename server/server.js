@@ -4,6 +4,7 @@ const { ApolloServer } = require('apollo-server-express');
 
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
+const routes = require("./routes");
 
 const {authMiddleware} = require('./utils/auth');
 
@@ -18,7 +19,10 @@ const server = new ApolloServer({
   context: authMiddleware
 });
 
-server.applyMiddleware({ app });
+// integrate our Apollo server with the Express application as middleware
+server.start().then(() => {
+	server.applyMiddleware({ app });
+});
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -31,6 +35,8 @@ if (process.env.NODE_ENV === 'production') {
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
+
+app.use(routes);
 
 db.once('open', () => {
   app.listen(PORT, () => {
